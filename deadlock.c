@@ -12,7 +12,7 @@ typedef struct VARS vars;
 
 pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutexMatrizes = PTHREAD_MUTEX_INITIALIZER;
-pthread_barrier_t barrier1;
+pthread_barrier_t barrier;
 int aleatorio = 1;
 int NuProcessos = 5;
 int NuServicos = 4;
@@ -22,15 +22,16 @@ void inicializa();
 void printMatrizRequisicao();
 void servirProcesso(int arg);
 void *escalonador (void *ptr);
+void teste();
 
-int main(int argc, char **argv)
+int main()
 {
 	char StrEntrada;
-	int i, j;
+	int i, j, k;
 	pthread_t thread[10];
-	pthread_t escalonador;
+	//pthread_t escalonador;
 	int thread_info[60];
-	pthread_barrier_init(&barrier1, NULL, NuProcessos);
+	pthread_barrier_init(&barrier, NULL, NuProcessos+1);
 	inicializa();
 	scanf("%c", &StrEntrada);
 	switch (StrEntrada){
@@ -50,10 +51,11 @@ int main(int argc, char **argv)
 		pthread_create( &thread[i-1], NULL, recurso, (void*) &thread_info[j-5]);
 		
 	}
-	pthread_create( &escalonador, NULL, recurso, (void*) &thread_info[j-5]);
-	pthread_join( thread[0], NULL);
-	pthread_join( escalonador, NULL);
-	
+	//pthread_create( &escalonador, NULL, recurso, (void*) &thread_info[j-5]);
+	//pthread_join( thread[0], NULL);
+	printf("oi");
+	//pthread_join( escalonador, NULL);
+	teste();
 	
 
 	return 0;
@@ -105,7 +107,8 @@ void *recurso(void *ptr)
 			}		
 		
 		pthread_mutex_unlock( &mutexMatrizes );
-		pthread_barrier_wait(&barrier1);
+		pthread_barrier_wait(&barrier);
+		printf("barreira %d\n",thread_info[0]);
 		sleep(1);
 		a--;
 	}
@@ -116,7 +119,7 @@ void *escalonador (void *ptr)
 {
 	int a = 20, i, j, count;
 	while(1!=a){
-		pthread_barrier_wait(&barrier1);
+		pthread_barrier_wait(&barrier);
 		pthread_mutex_lock( &mutexMatrizes );
 			for(i = 1; i <= NuProcessos; i++)
 			{
@@ -130,11 +133,12 @@ void *escalonador (void *ptr)
 					servirProcesso(i);
 			}
 			
-		pthread_barrier_wait(&barrier1);
+		pthread_barrier_wait(&barrier);
 		printMatrizRequisicao();
 	}
 	return NULL;
 }
+
 void servirProcesso(int arg)
 {
 	int j;
@@ -144,3 +148,12 @@ void servirProcesso(int arg)
 	}
 }
 
+void teste()
+{
+	while(1==1)
+	{
+		pthread_barrier_wait(&barrier);
+		printf("teste\n");
+	}
+	
+}
