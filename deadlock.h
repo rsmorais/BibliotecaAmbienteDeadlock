@@ -44,21 +44,23 @@ void *recurso(void *ptr)
 	int a = 10;
 	while(1!=a){
 		int *thread_info;
-		int i, k;
+		int i, j, k, count;
 		thread_info = (int *) ptr;
 		pthread_mutex_lock( var_coltrol.mutex );
-		printf("processo %d: esta requisitando serviços.\n", thread_info[0]);
-		if(randomic == 1)
+		//printf("processo %d: esta requisitando serviços.\n", thread_info[0]);
+		count = 0;
+		for(j = 0; j < NuServ; j++)
+			if((*var_info).R[thread_info[0]-1][j] > 0)
+				count++;
+		
+		if(randomic == 1 && count <= 0)
 			for(i=0; i < NuServ; i++)
 			{
 					k = (rand()%2);
 					if(thread_info[i+1] == 1 && k == 1)
-						(*var_info).R[thread_info[0]-1][i] += 1;
-				
-				printf("%d\n", k);
-			
+						(*var_info).R[thread_info[0]-1][i] += 1;			
 			}		
-		printMatrizRequisicao();
+		//printMatrizRequisicao();
 		pthread_mutex_unlock( var_coltrol.mutex );
 		pthread_barrier_wait( var_coltrol.barrier );
 		pthread_join(thread[thread_info[0]-1], NULL);
@@ -96,13 +98,28 @@ void deadlock_init_var()
 	int i, j;
 	for(i=0; i < 10; i++)
 		for(j=0; j < 4; j++)
+		{
 			(*var_info).R[i][j] = 0;
+			(*var_info).F[i][j] = 0;
+		}
 }
 
 //Função que imprime a matris de requisição "somente pra teste"
 void printMatrizRequisicao()
 {
-	int i, j, k;
+	int i, j, k, l, m;
+	printf("E = [");
+	for(l = 0; l < 4; l++)
+	{
+		printf("%d ",(*var_info).E[l]);
+	}
+	printf("]  A = [ ");
+	for(m = 0; m < 4; m++)
+	{
+		printf("%d ",(*var_info).A[m]);
+	}
+	printf("]\n\n");
+	printf("req           aloc\n");
 	for(i=0; i < NuProcess; i++)
 	{
 		for(j=0; j < 4; j++)
@@ -117,4 +134,14 @@ void printMatrizRequisicao()
 int deadlock_barrier_wait(deadlock_barrier_t *barrier)
 {
 	return pthread_barrier_wait(barrier);
+}
+
+int deadlock_mutex_lock(deadlock_mutex_t *mutex)
+{
+	return pthread_mutex_lock( mutex );
+}
+
+int deadlock_mutex_unlock(deadlock_mutex_t *mutex)
+{
+	return pthread_mutex_unlock( mutex );
 }

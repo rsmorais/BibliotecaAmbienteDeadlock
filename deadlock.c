@@ -13,13 +13,15 @@ deadlock_t matriz_deadlock;
 int aleatorio = 1;
 int NuProcessos = 5;
 int NuServicos = 4;
+deadlock_info_t var_coltrol;
 
 void escalonador();
+void servir(int i);
 
 int main()
 {
 	char StrEntrada;
-	int i, j;
+	int i, j, k, aux;
 	int thread_info[60];
 	pthread_barrier_init(&barrier, NULL, NuProcessos+1);
 	scanf("%c", &StrEntrada);
@@ -34,6 +36,13 @@ int main()
 			}
 			break;		
 	}
+	for(k = 0; k < 4; k++)
+	{
+		aux = rand()%10;
+		matriz_deadlock.E[k]=aux;
+		matriz_deadlock.A[k]=aux;
+	}
+	
 	deadlock_init(&mutex, &barrier, &matriz_deadlock, thread_info);
 	escalonador();
 
@@ -42,15 +51,42 @@ int main()
 
 void escalonador()
 {
-	int a = 1;
+	int a = 1, i, j, count;
 	while(a<10)
 	{			
 		deadlock_barrier_wait(&barrier);
-		pthread_mutex_lock( var_coltrol.mutex );
+		deadlock_mutex_lock( var_coltrol.mutex );
 			
-		pthread_mutex_unlock( var_coltrol.mutex );
+			for(i = 0; i < NuProcessos; i++)
+			{	count=0;
+				for(j = 0; j < NuServicos; j++)
+				{
+					if(matriz_deadlock.A[j] >= matriz_deadlock.R[i][j])
+						count++;
+				}
+				if(count == NuServicos)
+					servir(i);
+			}
+			printMatrizRequisicao();
+		deadlock_mutex_unlock( var_coltrol.mutex );
 		printf("VALOR DE a: %d\n", a);
 		a++;
 	}
+	
+}
+
+void servir(int i)
+{
+	int j;
+	for(j = 0; j < NuServicos; j++)
+	{
+		matriz_deadlock.F[i][j] += matriz_deadlock.R[i][j];
+		matriz_deadlock.A[j] -= matriz_deadlock.R[i][j];
+		matriz_deadlock.R[i][j] = 0;
+	}	
+}
+
+void verificaDeadlock()
+{
 	
 }
