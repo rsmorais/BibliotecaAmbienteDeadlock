@@ -20,11 +20,13 @@ typedef struct VARS2 deadlock_info_t;
 typedef pthread_mutex_t deadlock_mutex_t;
 typedef pthread_barrier_t deadlock_barrier_t;
 
+pthread_barrier_t barrier1;
 deadlock_info_t var_coltrol;
 deadlock_t *var_info;
 int NuProcess = 5;
 int NuServ = 4;
 int randomic = 1;
+int dormir = 0;
 pthread_t thread[10];
 void *recurso(void *ptr);
 void deadlock_pre_init();
@@ -38,26 +40,29 @@ void printMatrizRequisicao();
 //Função que será executada pelos processos(threads)
 void *recurso(void *ptr)
 {
-	int a = 20;
+	pthread_barrier_wait( &barrier1 );
+	int a = 10;
 	while(1!=a){
 		int *thread_info;
-		int i,j;
+		int i, k;
 		thread_info = (int *) ptr;
 		pthread_mutex_lock( var_coltrol.mutex );
 		printf("processo %d: esta requisitando serviços.\n", thread_info[0]);
 		if(randomic == 1)
-			for(i=1; i < 5; i++)
+			for(i=0; i < NuServ; i++)
 			{
-				j = (rand()%2);
-				if(thread_info[i] == 1 && j == 1)
-					(*var_info).R[0][1] += 1;
-				printf("%d\n", j);
+					k = (rand()%2);
+					if(thread_info[i+1] == 1 && k == 1)
+						(*var_info).R[thread_info[0]-1][i] += 1;
+				
+				printf("%d\n", k);
+			
 			}		
 		printMatrizRequisicao();
 		pthread_mutex_unlock( var_coltrol.mutex );
 		pthread_barrier_wait( var_coltrol.barrier );
-		printf("barreira %d\n",thread_info[0]);
-		sleep(1);
+		pthread_join(thread[thread_info[0]-1], NULL);
+		//sleep(1);
 		a--;
 	}
     return NULL;
@@ -70,6 +75,7 @@ void deadlock_pre_init()
 
 int deadlock_init(deadlock_mutex_t *mutex, deadlock_barrier_t *barrier, deadlock_t *matriz_deadlock, int *vet){
 	int i, j;
+	pthread_barrier_init(&barrier1, NULL, NuProcess);
 	var_coltrol.mutex = mutex;
 	var_coltrol.barrier = barrier;
 	var_coltrol.vet = vet;
@@ -107,4 +113,8 @@ void printMatrizRequisicao()
 		printf("\n");	
 	}
 	printf("\n");
+}
+int deadlock_barrier_wait(deadlock_barrier_t *barrier)
+{
+	return pthread_barrier_wait(barrier);
 }
