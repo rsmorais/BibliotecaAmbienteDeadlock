@@ -12,80 +12,129 @@ deadlock_barrier_t barrier;
 deadlock_t matriz_deadlock;
 int aleatorio = 1;
 int NuProcessos = 5;
-int NuServicos = 4;
+int NuServicos = 5;
 deadlock_info_t var_coltrol;
 
 void escalonador();
 void servir(int i);
+int verificaServir(int *SD, int *MR);
+int verificaDeadlock();
 
 int main()
 {
 	char StrEntrada;
-	int i, j, k, aux;
-	int thread_info[60];
+	int k, aux;
+	int vet[4]={NuProcessos,NuServicos,1,1};
 	deadlock_barrier_init(&barrier, NuProcessos+1);
 	scanf("%c", &StrEntrada);
-	switch (StrEntrada){
-		case 'P':
-			scanf("%d", &NuProcessos);
-			for(i = 1; i <= NuProcessos; i++){
-				j = i*5;
-				thread_info[j-5] = i;
-				scanf("%d%d%d%d", &thread_info[j-4], &thread_info[j-3], &thread_info[j-2], &thread_info[j-1]);
-				printf("%d %d %d %d %d\n", thread_info[j-5], thread_info[j-4], thread_info[j-3], thread_info[j-2], thread_info[j-1]);
-			}
-			break;		
-	}
-	for(k = 0; k < 4; k++)
-	{
-		aux = rand()%10;
-		matriz_deadlock.E[k]=aux;
-		matriz_deadlock.A[k]=aux;
-	}
 	
-	deadlock_init(&mutex, &barrier, &matriz_deadlock, thread_info);
+	//Iniciando os vetores de serviços existentes e disponíveis***
+	for(k = 0; k < NuServicos; k++)
+	{
+		aux = rand()%20;
+		matriz_deadlock.SE[k]=9;
+		matriz_deadlock.SD[k]=9;
+	}
+	//************************************************************
+	
+	//Iniciando as variáveis opcionais de deadlock****************
+	deadlock_pre_init(vet);
+	//************************************************************
+	
+	
+	//Iniciando o ambiente de deadlock****************************
+	deadlock_init(&mutex, &barrier, &matriz_deadlock);
+	//************************************************************
+	
+	//Chamando o escalonador de serviço pra gerenciar*************
 	escalonador();
-
+	//************************************************************
+	
 	return 0;
 }
 
 void escalonador()
 {
-	int a = 1, i, j, count;
+	int a = 1, i;
 	while(a<10)
 	{			
 		deadlock_barrier_wait(&barrier);
 		deadlock_mutex_lock( var_coltrol.mutex );
 			
 			for(i = 0; i < NuProcessos; i++)
-			{	count=0;
-				for(j = 0; j < NuServicos; j++)
-				{
-					if(matriz_deadlock.A[j] >= matriz_deadlock.R[i][j])
-						count++;
-				}
-				if(count == NuServicos)
+			{	
+				if(verificaServir(matriz_deadlock.SD, matriz_deadlock.MR[i]) == 1)
 					servir(i);
 			}
 			printMatrizRequisicao();
+			if(verificaDeadlock() == 1)
+				printf("DEADLOCK: ***********************************************************************\n");
+			
 		deadlock_mutex_unlock( var_coltrol.mutex );
 		printf("VALOR DE a: %d\n", a);
 		a++;
 	}
 	
 }
-
+//Função que serve ao processo(basicamente ela verifica se o processo pode ser servido
+//se sim ele serve somando a linha do processo da matriz de requisição, na matriz de serviços alocados)
 void servir(int i)
+{
+	
+	int j;
+	printf("servindo*****************************************\n");
+	for(j = 0; j < NuServicos; j++)
+	{
+		matriz_deadlock.MA[i][j] += matriz_deadlock.MR[i][j];
+		matriz_deadlock.SD[j] -= matriz_deadlock.MR[i][j];
+		matriz_deadlock.MR[i][j] = 0;
+	}
+	matriz_deadlock.MR[i][NuServicos] = 0;	
+}
+
+//Verifica se o vetor SD pode servir à requisição MR
+int verificaServir(int *SD, int *MR)
 {
 	int j;
 	for(j = 0; j < NuServicos; j++)
 	{
-		matriz_deadlock.F[i][j] += matriz_deadlock.R[i][j];
-		matriz_deadlock.A[j] -= matriz_deadlock.R[i][j];
-		matriz_deadlock.R[i][j] = 0;
-	}	
+		if(SD[j] < MR[j])
+			return 0;
+	}
+	return 1;
+	
 }
 
-void verificaDeadlock()
+//verifica se gerou deadlock
+int verificaDeadlock()
 {
+	
+	int i, j;
+	int vet[NuServicos];
+	printf("verificando deadlock***********************************\n");
+	for(i = 0; i < NuServicos; i++)
+		vet[i] = 0;
+	for(i = 0; i < NuProcessos; i++)
+	{
+		if(matriz_deadlock.MR[i][NuServicos] == 0)
+		{
+			for(j = 0; j < NuServicos; j++)
+				vet[j] += matriz_deadlock.MA[i][j];
+		}
+	}
+	for(j = 0; j < NuServicos; j++)
+		vet[j] += matriz_deadlock.SD[j];
+	
+	//verifica se os recursos dos processos que n tem mais requisição somados aos restantes pode servir aos que estão esperando
+	//se sim: não deu deadlock
+	//se não: deu deadlock
+	for(i = 0; i < NuProcessos; i++)
+		if(matriz_deadlock.MR[i][NuServicos] == 1 && verificaServir(vet, matriz_deadlock.MR[i]) == 0){
+			return 1;
+		}
+	for(i = 0; i < NuProcessos; i++)
+		if(matriz_deadlock.MR[i][NuServicos] == 0){
+			return 0;
+		}
+	return 1;
 }

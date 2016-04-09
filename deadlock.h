@@ -7,15 +7,15 @@
 #include <unistd.h>
 
 struct VARS{
-int E[4], A[4];
-int F[10][4], R[10][4];
+int SE[10], SD[10];
+int MA[15][10], MR[15][11];
 };
 
 
 struct VARS2{
 pthread_mutex_t *mutex;
 pthread_barrier_t *barrier;
-int *vet;
+int vet[165];
 };
 
 typedef struct VARS deadlock_t;
@@ -26,10 +26,10 @@ typedef pthread_barrier_t deadlock_barrier_t;
 pthread_barrier_t barrier1;
 deadlock_info_t var_coltrol;
 deadlock_t *var_info;
-pthread_t thread[10];
+pthread_t thread[15];
 void *recurso(void *ptr);
-void deadlock_pre_init();
-int deadlock_init(deadlock_mutex_t *mutex, deadlock_barrier_t *barrier, deadlock_t *matriz_deadlock, int *vet);
+void deadlock_pre_init(int *vet);
+int deadlock_init(deadlock_mutex_t *mutex, deadlock_barrier_t *barrier, deadlock_t *matriz_deadlock);
 void deadlock_init_var();
 void printMatrizRequisicao();
 void deadlock_exit();
