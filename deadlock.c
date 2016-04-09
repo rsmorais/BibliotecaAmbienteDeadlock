@@ -1,92 +1,121 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <unistd.h>
 #include "deadlock.h"
-
-
-pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutexMatrizes = PTHREAD_MUTEX_INITIALIZER;
-deadlock_mutex_t mutex;
-deadlock_barrier_t barrier;
-deadlock_t matriz_deadlock;
-int aleatorio = 1;
-int NuProcessos = 5;
-int NuServicos = 4;
-deadlock_info_t var_coltrol;
-
-void escalonador();
-void servir(int i);
-
-int main()
+int NuProcess = 5;
+int NuServ = 4;
+int randomic = 1;
+int dormir = 0;
+//Função que será executada pelos processos(threads)
+void *recurso(void *ptr)
 {
-	char StrEntrada;
-	int i, j, k, aux;
-	int thread_info[60];
-	pthread_barrier_init(&barrier, NULL, NuProcessos+1);
-	scanf("%c", &StrEntrada);
-	switch (StrEntrada){
-		case 'P':
-			scanf("%d", &NuProcessos);
-			for(i = 1; i <= NuProcessos; i++){
-				j = i*5;
-				thread_info[j-5] = i;
-				scanf("%d%d%d%d", &thread_info[j-4], &thread_info[j-3], &thread_info[j-2], &thread_info[j-1]);
-				printf("%d %d %d %d %d\n", thread_info[j-5], thread_info[j-4], thread_info[j-3], thread_info[j-2], thread_info[j-1]);
-			}
-			break;		
+	pthread_barrier_wait( &barrier1 );
+	int a = 10;
+	while(1!=a){
+		int *thread_info;
+		int i, j, k, count;
+		thread_info = (int *) ptr;
+		pthread_mutex_lock( var_coltrol.mutex );
+		//printf("processo %d: esta requisitando serviços.\n", thread_info[0]);
+		count = 0;
+		for(j = 0; j < NuServ; j++)
+			if((*var_info).R[thread_info[0]-1][j] > 0)
+				count++;
+		
+		if(randomic == 1 && count <= 0)
+			for(i=0; i < NuServ; i++)
+			{
+					k = (rand()%2);
+					if(thread_info[i+1] == 1 && k == 1)
+						(*var_info).R[thread_info[0]-1][i] += 1;			
+			}		
+		//printMatrizRequisicao();
+		pthread_mutex_unlock( var_coltrol.mutex );
+		pthread_barrier_wait( var_coltrol.barrier );
+		pthread_join(thread[thread_info[0]-1], NULL);
+		//sleep(1);
+		a--;
 	}
-	for(k = 0; k < 4; k++)
+    return NULL;
+}
+
+void deadlock_pre_init()
+{
+	
+}
+
+int deadlock_init(deadlock_mutex_t *mutex, deadlock_barrier_t *barrier, deadlock_t *matriz_deadlock, int *vet){
+	int i, j;
+	pthread_barrier_init(&barrier1, NULL, NuProcess);
+	var_coltrol.mutex = mutex;
+	var_coltrol.barrier = barrier;
+	var_coltrol.vet = vet;
+	var_info = matriz_deadlock;
+	deadlock_init_var();
+	for(i = 1; i <= NuProcess; i++){
+		j = i*5;
+		pthread_create( &thread[i-1], NULL, recurso, (void*) &var_coltrol.vet[j-5]);
+		
+	}
+	
+	return 1;
+}
+
+//Função que inicializa a variavel de controle de serviços
+void deadlock_init_var()
+{
+	int i, j;
+	for(i=0; i < 10; i++)
+		for(j=0; j < 4; j++)
+		{
+			(*var_info).R[i][j] = 0;
+			(*var_info).F[i][j] = 0;
+		}
+}
+
+//Função que imprime a matris de requisição "somente pra teste"
+void printMatrizRequisicao()
+{
+	int i, j, k, l, m;
+	printf("E = [");
+	for(l = 0; l < 4; l++)
 	{
-		aux = rand()%10;
-		matriz_deadlock.E[k]=aux;
-		matriz_deadlock.A[k]=aux;
+		printf("%d ",(*var_info).E[l]);
 	}
-	
-	deadlock_init(&mutex, &barrier, &matriz_deadlock, thread_info);
-	escalonador();
-
-	return 0;
-}
-
-void escalonador()
-{
-	int a = 1, i, j, count;
-	while(a<10)
-	{			
-		deadlock_barrier_wait(&barrier);
-		deadlock_mutex_lock( var_coltrol.mutex );
-			
-			for(i = 0; i < NuProcessos; i++)
-			{	count=0;
-				for(j = 0; j < NuServicos; j++)
-				{
-					if(matriz_deadlock.A[j] >= matriz_deadlock.R[i][j])
-						count++;
-				}
-				if(count == NuServicos)
-					servir(i);
-			}
-			printMatrizRequisicao();
-		deadlock_mutex_unlock( var_coltrol.mutex );
-		printf("VALOR DE a: %d\n", a);
-		a++;
-	}
-	
-}
-
-void servir(int i)
-{
-	int j;
-	for(j = 0; j < NuServicos; j++)
+	printf("]  A = [ ");
+	for(m = 0; m < 4; m++)
 	{
-		matriz_deadlock.F[i][j] += matriz_deadlock.R[i][j];
-		matriz_deadlock.A[j] -= matriz_deadlock.R[i][j];
-		matriz_deadlock.R[i][j] = 0;
-	}	
+		printf("%d ",(*var_info).A[m]);
+	}
+	printf("]\n\n");
+	printf("req           aloc\n");
+	for(i=0; i < NuProcess; i++)
+	{
+		for(j=0; j < 4; j++)
+			printf("%d ", (*var_info).R[i][j]);
+		printf("  ");
+		for(k=0; k < 4; k++)
+			printf("%d ", (*var_info).F[i][k]);
+		printf("\n");	
+	}
+	printf("\n");
+}
+void deadlock_exit()
+{
 }
 
-void verificaDeadlock()
+int deadlock_barrier_wait(deadlock_barrier_t *barrier)
 {
-	
+	return pthread_barrier_wait(barrier);
+}
+
+int deadlock_mutex_lock(deadlock_mutex_t *mutex)
+{
+	return pthread_mutex_lock( mutex );
+}
+
+int deadlock_mutex_unlock(deadlock_mutex_t *mutex)
+{
+	return pthread_mutex_unlock( mutex );
+}
+int deadlock_barrier_init(deadlock_barrier_t *barrier, int i)
+{
+	return pthread_barrier_init(barrier, NULL, i);
 }

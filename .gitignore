@@ -2,3 +2,8 @@ deadlock.o
 deadlock
 saida.txt
 deadlock.h.gch
+saida_bkp.txt
+saida_bkp2.txt
+exemp.o
+exemp.bin
+libdeadlock.a
