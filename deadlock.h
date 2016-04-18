@@ -31,7 +31,7 @@ void *recurso(void *ptr);
 void deadlock_pre_init(int *vet);
 int deadlock_init(deadlock_mutex_t *mutex, deadlock_barrier_t *barrier, deadlock_t *matriz_deadlock);
 void deadlock_init_var();
-void printMatrizRequisicao();
+void deadlock_printMatriz();
 void deadlock_exit();
 int deadlock_mutex_unlock(deadlock_mutex_t *mutex);
 int deadlock_mutex_lock(deadlock_mutex_t *mutex);

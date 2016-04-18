@@ -5,15 +5,12 @@
 #include "deadlock.h"
 
 
-pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutexMatrizes = PTHREAD_MUTEX_INITIALIZER;
 deadlock_mutex_t mutex;
 deadlock_barrier_t barrier;
 deadlock_t matriz_deadlock;
 int aleatorio = 1;
 int NuProcessos = 5;
 int NuServicos = 5;
-deadlock_info_t var_coltrol;
 
 void escalonador();
 void servir(int i);
@@ -23,15 +20,14 @@ int verificaDeadlock();
 int main()
 {
 	char StrEntrada;
-	int k, aux;
-	int vet[4]={NuProcessos,NuServicos,1,1};
+	int k;
+	int vet[4]={NuProcessos,NuServicos,1,0};
 	deadlock_barrier_init(&barrier, NuProcessos+1);
 	scanf("%c", &StrEntrada);
 	
 	//Iniciando os vetores de serviços existentes e disponíveis***
 	for(k = 0; k < NuServicos; k++)
 	{
-		aux = rand()%20;
 		matriz_deadlock.SE[k]=9;
 		matriz_deadlock.SD[k]=9;
 	}
@@ -59,18 +55,18 @@ void escalonador()
 	while(a<10)
 	{			
 		deadlock_barrier_wait(&barrier);
-		deadlock_mutex_lock( var_coltrol.mutex );
+		deadlock_mutex_lock( &mutex );
 			
 			for(i = 0; i < NuProcessos; i++)
 			{	
 				if(verificaServir(matriz_deadlock.SD, matriz_deadlock.MR[i]) == 1)
 					servir(i);
 			}
-			printMatrizRequisicao();
+			deadlock_printMatriz();
 			if(verificaDeadlock() == 1)
 				printf("DEADLOCK: ***********************************************************************\n");
 			
-		deadlock_mutex_unlock( var_coltrol.mutex );
+		deadlock_mutex_unlock( &mutex );
 		printf("VALOR DE a: %d\n", a);
 		a++;
 	}

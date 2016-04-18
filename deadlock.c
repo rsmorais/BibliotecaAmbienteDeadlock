@@ -1,7 +1,7 @@
 #include "deadlock.h"
 int NuProcess = 15;
 int NuServ = 10;
-int randomic = 1;
+int randomic = 10;
 int dormir = 0;
 int valueProcess = 1;
 int vet_aux[165];
@@ -9,8 +9,7 @@ int vet_aux[165];
 void *recurso(void *ptr)
 {
 	pthread_barrier_wait( &barrier1 );
-	int a = 10;
-	while(1!=a){
+	while(1!=randomic){
 		int *thread_info;
 		int i, j, k, count;
 		thread_info = (int *) ptr;
@@ -29,12 +28,12 @@ void *recurso(void *ptr)
 						(*var_info).MR[thread_info[0]-1][i] += 1;			
 			}
 			(*var_info).MR[thread_info[0]-1][NuServ] = 1;
-		//printMatrizRequisicao();
+		//deadlock_printMatriz();
 		pthread_mutex_unlock( var_coltrol.mutex );
 		pthread_barrier_wait( var_coltrol.barrier );
 		pthread_join(thread[thread_info[0]-1], NULL);
 		sleep(dormir);
-		a--;
+		randomic--;
 	}
     return NULL;
 }
@@ -66,6 +65,7 @@ int deadlock_init(deadlock_mutex_t *mutex, deadlock_barrier_t *barrier, deadlock
 		}
 	}else{
 		j=1;
+		
 		for(i = 0 ; i < (NuProcess*(NuServ+1)); i++)
 		{
 			if(i%(NuServ+1) == 0){
@@ -81,6 +81,7 @@ int deadlock_init(deadlock_mutex_t *mutex, deadlock_barrier_t *barrier, deadlock
 		}
 		
 	}
+	
 	for(i = 0; i < NuProcess; i++){
 		pthread_create( &thread[i], NULL, recurso, (void*) &var_coltrol.vet[i*(NuServ+1)]);
 	}
@@ -91,16 +92,21 @@ int deadlock_init(deadlock_mutex_t *mutex, deadlock_barrier_t *barrier, deadlock
 void deadlock_init_var()
 {
 	int i, j;
-	for(i=0; i < 10; i++)
-		for(j=0; j < 4; j++)
+	for(i=0; i < NuProcess; i++)
+		for(j=0; j < NuServ; j++)
 		{
 			(*var_info).MR[i][j] = 0;
 			(*var_info).MA[i][j] = 0;
 		}
+	for(j=0; j < NuServ; j++)
+	{
+		(*var_info).SE[j]= 9;
+		(*var_info).SD[j]= 9;
+	}
 }
 
 //Função que imprime a matris de requisição "somente pra teste"
-void printMatrizRequisicao()
+void deadlock_printMatriz()
 {
 	int i, j, k, l, m;
 	printf("E = [");
