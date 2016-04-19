@@ -11,16 +11,12 @@ void *recurso(void *ptr)
 	pthread_barrier_wait( &barrier1 );
 	while(1!=randomic){
 		int *thread_info;
-		int i, j, k, count;
+		int i, k;
 		thread_info = (int *) ptr;
 		pthread_mutex_lock( var_coltrol.mutex );
-		//printf("processo %d: esta requisitando serviços.\n", thread_info[0]);
-		count = 0;
-		for(j = 0; j < NuServ; j++)
-			if((*var_info).MR[thread_info[0]-1][j] > 0)
-				count++;
 		
-		if(randomic == 1 && count == 0)
+		if((*var_info).MR[thread_info[0]-1][NuServ] == 0)
+			//printf("processo %d: esta requisitando serviços.\n", thread_info[0]);
 			for(i=0; i < NuServ; i++)
 			{
 					k = (rand()%2);
@@ -42,7 +38,7 @@ void deadlock_pre_init(int *vet)
 {
 	NuProcess = vet[0];
 	NuServ = vet[1];
-	randomic = vet[2];
+	randomic = vet[2]*NuProcess;
 	dormir = vet[3];
 }
 
@@ -54,36 +50,24 @@ int deadlock_init(deadlock_mutex_t *mutex, deadlock_barrier_t *barrier, deadlock
 	var_coltrol.barrier = barrier;
 	var_info = matriz_deadlock;
 	deadlock_init_var();
-	if(valueProcess != 1){
-		for(i = 1; i <= NuProcess; i++){
-			var_coltrol.vet[i-1] = i;
-			for(j = 1; j <= NuServ; j++){
-				scanf("%d", &var_coltrol.vet[j]);
-				printf("%d", var_coltrol.vet[j]);
-			}
-			printf("\n");
-		}
-	}else{
-		j=1;
+	j=1;
 		
-		for(i = 0 ; i < (NuProcess*(NuServ+1)); i++)
-		{
-			if(i%(NuServ+1) == 0){
-				printf("\n");
-				var_coltrol.vet[i] = j;
-				j++;
-			}
-			else
-				var_coltrol.vet[i] = 1;
-			printf("%d", var_coltrol.vet[i]);
-			
-			
+	for(i = 0 ; i < (NuProcess*(NuServ+1)); i++)
+	{
+		if(i%(NuServ+1) == 0){
+			//printf("\n");
+			var_coltrol.vet[i] = j;
+			j++;
 		}
-		
+		else
+			var_coltrol.vet[i] = 1;
+		//printf("%d", var_coltrol.vet[i]);
+				
 	}
-	
+		
 	for(i = 0; i < NuProcess; i++){
 		pthread_create( &thread[i], NULL, recurso, (void*) &var_coltrol.vet[i*(NuServ+1)]);
+		printf("processo %d", var_coltrol.vet[i*(NuServ+1)]);
 	}
 	return 1;
 }
@@ -93,7 +77,7 @@ void deadlock_init_var()
 {
 	int i, j;
 	for(i=0; i < NuProcess; i++)
-		for(j=0; j < NuServ; j++)
+		for(j=0; j <= NuServ; j++)
 		{
 			(*var_info).MR[i][j] = 0;
 			(*var_info).MA[i][j] = 0;

@@ -11,3 +11,5 @@ $ gcc <código.c> -L. libdeadlock.a -o <nome de bin> -pthread
 
 
 OBS: ESSES PASSOS FUNCIONAM SE TODOS OS ARQUIVOS ESTIVEREM NO MESMO DIRETÓRIO
+
+Para o correto funcionamento do código exemplo, deve ser utilizado as entradas contidas em entrada.txt

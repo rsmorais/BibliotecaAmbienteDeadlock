@@ -19,11 +19,10 @@ int verificaDeadlock();
 
 int main()
 {
-	char StrEntrada;
+
 	int k;
-	int vet[4]={NuProcessos,NuServicos,1,0};
+	int vet[4]={NuProcessos,NuServicos,20,0};
 	deadlock_barrier_init(&barrier, NuProcessos+1);
-	scanf("%c", &StrEntrada);
 	
 	//Iniciando os vetores de serviços existentes e disponíveis***
 	for(k = 0; k < NuServicos; k++)
@@ -52,7 +51,7 @@ int main()
 void escalonador()
 {
 	int a = 1, i;
-	while(a<10)
+	while(a<=20)
 	{			
 		deadlock_barrier_wait(&barrier);
 		deadlock_mutex_lock( &mutex );
